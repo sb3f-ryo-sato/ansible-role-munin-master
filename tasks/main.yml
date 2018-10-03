@@ -1,0 +1,90 @@
+---
+# tasks file for setup-munin-master
+- name: Install EPEL repository package
+  become: True
+  package:
+    name: "{{ item }}"
+    update_cache: yes
+    state: latest
+  with_items:
+    - epel-release
+
+- name: Install httpd and munin packages
+  become: True
+  package:
+    name: "{{ item }}"
+    update_cache: yes
+    state: latest
+  with_items:
+    - httpd
+    - munin
+  notify:
+    - Restart httpd
+    - Restart munin-node
+
+- name: Deploy the local-munin.pp
+  become: True
+  copy:
+    src: local-munin.pp
+    dest: /usr/local/etc
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Install SELinux module for munin
+  become: True
+  command: semodule -i /usr/local/etc/local-munin.pp
+
+- name: Copy the httpd_munin.conf
+  become: True
+  copy:
+    src: /usr/share/doc/munin-common-2.0.40/httpd_munin.conf
+    dest: /etc/httpd/conf.d
+    remote_src: yes
+    owner: root
+    group: root
+    mode: 0644
+    seuser: system_u
+    serole: object_r
+    setype: httpd_config_t
+    selevel: s0
+  notify:
+    - Restart httpd
+
+- name: Create the node list
+  become: True
+  blockinfile:
+    path: /etc/munin/conf.d/local.conf
+    create: yes
+    owner: root
+    group: root
+    mode: 0644
+    seuser: system_u
+    serole: object_r
+    setype: munin_etc_t
+    selevel: s0
+    block: |
+      graph_strategy cgi
+      html_strategy cgi
+      cgiurl_graph /munin/graph
+
+      [{{ ansible_fqdn }}]
+      address 127.0.0.1
+  notify:
+    - Restart munin-node
+
+- name: Configure munin-node
+  become: True
+  shell: munin-node-configure --shell | sh -x
+  notify:
+    - Restart munin-node
+
+- name: Enable and start httpd and munin-node
+  become: True
+  systemd:
+    name: "{{ item }}"
+    enabled : yes
+    state: started
+  with_items:
+    - httpd
+    - munin-node

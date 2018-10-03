@@ -1,0 +1,5 @@
+---
+- name: Setup the Munin master
+  hosts: localhost
+  roles:
+    - setup-munin-master

@@ -1,0 +1,13 @@
+---
+# handlers file for setup-munin-master
+- name: Restart httpd
+  become: True
+  systemd:
+    name: httpd
+    state: restarted
+
+- name: Restart munin-node
+  become: True
+  systemd:
+    name: munin-node
+    state: restarted
