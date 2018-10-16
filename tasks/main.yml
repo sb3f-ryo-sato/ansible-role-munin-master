@@ -58,7 +58,7 @@
   become: True
   template:
     src: local.conf.j2
-    dest: /etc/httpd/conf.d/local.conf
+    dest: /etc/munin/conf.d/local.conf
     owner: root
     group: root
     mode: 0644
