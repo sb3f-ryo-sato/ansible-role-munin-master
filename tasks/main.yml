@@ -35,21 +35,24 @@
   become: True
   command: semodule -i /usr/local/etc/local-munin.pp
 
-#- name: Copy the httpd_munin.conf
-#  become: True
-#  copy:
-#    src: /usr/share/doc/munin-common-2.0.40/httpd_munin.conf
-#    dest: /etc/httpd/conf.d
-#    remote_src: yes
-#    owner: root
-#    group: root
-#    mode: 0644
-#    seuser: system_u
-#    serole: object_r
-#    setype: httpd_config_t
-#    selevel: s0
-#  notify:
-#    - Restart httpd
+- name: Copy the httpd_munin.conf
+  become: True
+  copy:
+    src: "/usr/share/doc/munin-common-2.0.40/{{ item }}"
+    dest: /etc/httpd/conf.d
+    remote_src: yes
+    owner: root
+    group: root
+    mode: 0644
+    seuser: system_u
+    serole: object_r
+    setype: httpd_config_t
+    selevel: s0
+  notify:
+    - Restart httpd
+  with_items:
+    - httpd_cgi_graphs.conf
+    - httpd_cron_graphs.conf
 
 - name: Create the node list
   become: True
