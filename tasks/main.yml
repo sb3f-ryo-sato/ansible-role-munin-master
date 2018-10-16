@@ -35,7 +35,7 @@
   become: True
   command: semodule -i /usr/local/etc/local-munin.pp
 
-- name: Copy the httpd_munin.conf
+- name: Copy the configuration files to httpd
   become: True
   copy:
     src: "/usr/share/doc/munin-common-2.0.40/{{ item }}"
@@ -48,17 +48,17 @@
     serole: object_r
     setype: httpd_config_t
     selevel: s0
-  notify:
-    - Restart httpd
   with_items:
     - httpd_cgi_graphs.conf
     - httpd_cron_graphs.conf
+  notify:
+    - Restart httpd
 
 - name: Create the node list
   become: True
-  blockinfile:
-    path: /etc/munin/conf.d/local.conf
-    create: yes
+  template:
+    src: local.conf.j2
+    dest: /etc/httpd/conf.d/local.conf
     owner: root
     group: root
     mode: 0644
@@ -66,13 +66,6 @@
     serole: object_r
     setype: munin_etc_t
     selevel: s0
-    block: |
-      graph_strategy cgi
-      html_strategy cgi
-      cgiurl_graph /munin/graph
-
-      [{{ ansible_fqdn }}]
-      address 127.0.0.1
   notify:
     - Restart munin-node
 
